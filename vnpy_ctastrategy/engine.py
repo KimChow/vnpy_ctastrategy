@@ -23,6 +23,7 @@ from vnpy.trader.object import (
     OrderData,
     TradeData,
     ContractData,
+    PositionData,
 )
 from vnpy.trader.event import (
     EVENT_TICK,
@@ -422,6 +423,12 @@ class CtaEngine(BaseEngine):
         self.put_stop_order_event(stop_order)
 
         return [stop_orderid]
+
+    def get_position(self, vt_positionid: str) -> Optional[PositionData]:
+        """
+        Get specific position data by vt_positionid.
+        """
+        return self.main_engine.get_position(vt_positionid)
 
     def cancel_server_order(self, strategy: CtaTemplate, vt_orderid: str) -> None:
         """

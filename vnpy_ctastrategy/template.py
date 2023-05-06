@@ -1,9 +1,9 @@
 from abc import ABC
 from copy import copy
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 
 from vnpy.trader.constant import Interval, Direction, Offset
-from vnpy.trader.object import BarData, TickData, OrderData, TradeData
+from vnpy.trader.object import BarData, TickData, OrderData, TradeData, PositionData
 from vnpy.trader.utility import virtual
 
 from .base import StopOrder, EngineType
@@ -251,6 +251,12 @@ class CtaTemplate(ABC):
             return vt_orderids
         else:
             return []
+
+    def get_position(self, vt_positionid: str) -> Optional[PositionData]:
+        """
+        Get position data by vt_positionid.
+        """
+        return self.cta_engine.get_position(vt_positionid)
 
     def cancel_order(self, vt_orderid: str) -> None:
         """
