@@ -1,3 +1,4 @@
+from math import isclose
 from vnpy_ctastrategy import (
     CtaTemplate,
     StopOrder,
@@ -7,7 +8,11 @@ from vnpy_ctastrategy import (
     OrderData,
     BarGenerator,
     ArrayManager,
+    Direction,
 )
+from vnpy.trader.object import PositionData
+from vnpy_ctastrategy.base import EngineType
+from typing import Optional
 
 
 class AtrRsiStrategy(CtaTemplate):
@@ -98,6 +103,19 @@ class AtrRsiStrategy(CtaTemplate):
         self.atr_value = atr_array[-1]
         self.atr_ma = atr_array[-self.atr_ma_length:].mean()
         self.rsi_value = am.rsi(self.rsi_length)
+
+        if self.get_engine_type() == EngineType.LIVE:
+            # 实盘模式下，仓位与交易所不同时，同步仓位
+            net_pos: Optional[PositionData] = self.cta_engine.get_position(f"{self.vt_symbol}.{Direction.NET.value}")
+            long_pos: Optional[PositionData] = self.cta_engine.get_position(f"{self.vt_symbol}.{Direction.LONG.value}")
+            short_pos: Optional[PositionData] = self.cta_engine.get_position(f"{self.vt_symbol}.{Direction.SHORT.value}")
+            if net_pos:
+                if isclose(self.pos, net_pos.volume):
+                    self.pos = net_pos.volume
+            elif long_pos and short_pos:
+                if isclose(self.pos, long_pos.volume + short_pos.volume):
+                    self.pos = long_pos.volume + short_pos.volume
+            pass
 
         if self.pos == 0:
             self.intra_trade_high = bar.high_price

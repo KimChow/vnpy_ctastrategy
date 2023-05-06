@@ -1,3 +1,4 @@
+from math import isclose
 from vnpy_ctastrategy import (
     CtaTemplate,
     StopOrder,
@@ -7,7 +8,11 @@ from vnpy_ctastrategy import (
     OrderData,
     BarGenerator,
     ArrayManager,
+    Direction,
 )
+from vnpy.trader.object import PositionData
+from vnpy_ctastrategy.base import EngineType
+from typing import Optional
 
 
 class MultiTimeframeStrategy(CtaTemplate):
@@ -89,6 +94,19 @@ class MultiTimeframeStrategy(CtaTemplate):
 
         if not self.ma_trend:
             return
+
+        if self.get_engine_type() == EngineType.LIVE:
+            # 实盘模式下，仓位与交易所不同时，同步仓位
+            net_pos: Optional[PositionData] = self.cta_engine.get_position(f"{self.vt_symbol}.{Direction.NET.value}")
+            long_pos: Optional[PositionData] = self.cta_engine.get_position(f"{self.vt_symbol}.{Direction.LONG.value}")
+            short_pos: Optional[PositionData] = self.cta_engine.get_position(f"{self.vt_symbol}.{Direction.SHORT.value}")
+            if net_pos:
+                if isclose(self.pos, net_pos.volume):
+                    self.pos = net_pos.volume
+            elif long_pos and short_pos:
+                if isclose(self.pos, long_pos.volume + short_pos.volume):
+                    self.pos = long_pos.volume + short_pos.volume
+            pass
 
         self.rsi_value = self.am5.rsi(self.rsi_window)
 
